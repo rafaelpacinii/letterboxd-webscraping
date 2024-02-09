@@ -1,2 +1,3 @@
-# letterboxd-webscraping
-Colecting data from all movies of letterboxd.com website.
+# Letterboxd Webscraping
+Colecting data from movies of letterboxd.com website.
+
