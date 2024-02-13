@@ -8,7 +8,7 @@ req_base_pl <- httr2::request(url_base) |>
   httr2::req_url_path(path = "/films/ajax/popular/page/") |>
   httr2::req_url_query(`esiAllowFilters` = "true")
 
-reqs_pl <- purrr::map(1:num_pages, ~ {
+reqs_pl <- furrr::future_map(1:num_pages, ~ {
   req_base_pl |>
     httr2::req_url_path_append(page_number = glue::glue("{.x}/"))
 })
@@ -18,16 +18,16 @@ resps_pl <- httr2::req_perform_parallel(
   progress = "FP: resps_pl", on_error = "continue"
 )
 
-movies_path_list <- purrr::map(resps_pl, ~ {
+movies_path_list <- furrr::future_map(resps_pl, ~ {
   httr2::resp_body_html(.x) |>
     rvest::html_elements(".film-poster") |>
     rvest::html_attr("data-target-link")
-}, .progress = "FP: movies_path_list")
+})
 
 movies_path <- unlist(movies_path_list)
 
 # Second part: getting the data from each movie page ------------------
-reqs_ml <- purrr::map(movies_path, ~ {
+reqs_ml <- furrr::future_map(movies_path, ~ {
   httr2::request(url_base) |>
     httr2::req_user_agent(user_agent) |>
     httr2::req_url_path(path = .x)
@@ -38,7 +38,7 @@ resps_ml <- httr2::req_perform_parallel(
   progress = "SP: resps_ml", on_error = "continue"
 )
 
-movies_data <- purrr::map(resps_ml, ~ {
+movies_data <- furrr::future_map(resps_ml, ~ {
   html_response <- httr2::resp_body_html(.x)
   movie_data <- list(
     title = html_response |>
@@ -77,4 +77,4 @@ movies_data <- purrr::map(resps_ml, ~ {
       rvest::html_text() |>
       paste0(collapse = ", ")
   )
-}, .progress = "SP: movies_data")
+})
