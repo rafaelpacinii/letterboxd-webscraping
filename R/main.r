@@ -1,7 +1,7 @@
 # First part: getting the paths to the movies page --------------------
 url_base <- "https://letterboxd.com"
 user_agent <- "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.3" # nolint
-num_pages <- 1
+num_pages <- 100
 
 req_base_pl <- httr2::request(url_base) |>
   httr2::req_user_agent(user_agent) |>
@@ -88,3 +88,7 @@ movies_data <- do.call(rbind, movies_data) |>
 final_movies_data <- movies_data |>
   dplyr::mutate(across(everything(), as.character)) |>
   dplyr::mutate(rating = as.numeric(gsub(" out of 5", "", rating)))
+
+# Fourth part: save the data ------------------------------------------
+
+saveRDS(final_movies_data, "data/movies_data.rds")
