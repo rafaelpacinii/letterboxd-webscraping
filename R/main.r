@@ -40,42 +40,26 @@ resps_ml <- httr2::req_perform_parallel(
 
 movies_data <- furrr::future_map(resps_ml, ~ {
   html_response <- httr2::resp_body_html(.x)
+  json_data = html_response |>
+    rvest::html_elements(
+      xpath = "//script[@type = 'application/ld+json']"
+    ) |>
+    rvest::html_text() |>
+    jsonlite::fromJSON()
   movie_data <- list(
-    title = html_response |>
-      rvest::html_elements(".headline-1") |>
-      rvest::html_text(),
-    actors = html_response |>
-      rvest::html_elements(".cast-list .text-slug") |>
-      rvest::html_text() |>
-      paste0(collapse = ", "),
-    director = html_response |>
-      rvest::html_elements(
-        xpath = "//section[@id = 'featured-film-header']//span"
-      ) |>
-      rvest::html_text() |>
-      paste0(collapse = ", "),
-    rating = html_response |>
-      rvest::html_elements(
-        xpath = "//meta[@name = 'twitter:data2']"
-      ) |>
-      rvest::html_attr("content"),
-    year = html_response |>
-      rvest::html_elements(
-        xpath = "//section[@id = 'featured-film-header']//small/a"
-      ) |>
-      rvest::html_text(),
-    genres = html_response |>
-      rvest::html_elements(
-        xpath = "//div[@id = 'tab-genres']//p/a[contains(@href, '/films/genre/')]" # nolint
-      ) |>
-      rvest::html_text() |>
-      paste0(collapse = ", "),
-    themes = html_response |>
-      rvest::html_elements(
-        xpath = "//div[@id = 'tab-genres']//p/a[contains(@href, '/films/theme/')]" # nolint
-      ) |>
-      rvest::html_text() |>
-      paste0(collapse = ", ")
+    title = json_data[["name"]],
+    actors = na.omit(json_data[["actors"]][["name"]][1:15]) |> 
+      paste(collapse = ", ") , # Only the first 15 actors
+    director = json_data[["director"]][["name"]] |>
+      paste(collapse = ", "),
+    producer = json_data[["productionCompany"]][["name"]] |>
+      paste(collapse = ", "),
+    rating = json_data[["aggregateRating"]][["ratingValue"]],
+    num_ratings = json_data[["aggregateRating"]][["ratingCount"]],
+    year = json_data[["releasedEvent"]][["startDate"]],
+    genres = json_data[["genre"]] |>
+      paste(collapse = ", "),
+    img_url = json_data[["image"]]
   )
 })
 
@@ -85,7 +69,8 @@ movies_data <- do.call(rbind, movies_data) |>
 
 final_movies_data <- movies_data |>
   dplyr::mutate(across(everything(), as.character)) |>
-  dplyr::mutate(rating = as.numeric(gsub(" out of 5", "", rating)))
+  dplyr::mutate(across(everything(), ~ gsub("NULL", NA, .))) |>
+  dplyr::mutate(across(c(rating, num_ratings), as.numeric))
 
 # Fourth part: save the data ------------------------------------------
 saveRDS(final_movies_data, "data/movies_data.rds")
