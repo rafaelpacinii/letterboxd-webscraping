@@ -1,7 +1,7 @@
 # First part: getting the paths to the movies page --------------------
 url_base <- "https://letterboxd.com"
 user_agent <- "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.3" # nolint
-num_pages <- 10
+num_pages <- 1
 
 req_base_pl <- httr2::request(url_base) |>
   httr2::req_user_agent(user_agent) |>
@@ -66,13 +66,13 @@ movies_data <- furrr::future_map(resps_ml, ~ {
       rvest::html_text(),
     genres = html_response |>
       rvest::html_elements(
-        xpath = "//div[@id = 'tab-genres']//p[position() = 1]/a"
+        xpath = "//div[@id = 'tab-genres']//p/a[contains(@href, '/films/genre/')]" # nolint
       ) |>
       rvest::html_text() |>
       paste0(collapse = ", "),
     themes = html_response |>
       rvest::html_elements(
-        xpath = "//div[@id = 'tab-genres']//div[position() = 2]/p/a"
+        xpath = "//div[@id = 'tab-genres']//p/a[contains(@href, '/films/theme/')]" # nolint
       ) |>
       rvest::html_text() |>
       paste0(collapse = ", ")
