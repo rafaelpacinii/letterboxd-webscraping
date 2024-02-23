@@ -79,8 +79,6 @@ movies_data <- furrr::future_map(resps_ml, ~ {
   )
 })
 
-
-
 # Third part: tidy the data -------------------------------------------
 movies_data <- do.call(rbind, movies_data) |>
   data.frame()
@@ -90,5 +88,4 @@ final_movies_data <- movies_data |>
   dplyr::mutate(rating = as.numeric(gsub(" out of 5", "", rating)))
 
 # Fourth part: save the data ------------------------------------------
-
 saveRDS(final_movies_data, "data/movies_data.rds")
