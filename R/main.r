@@ -78,3 +78,13 @@ movies_data <- furrr::future_map(resps_ml, ~ {
       paste0(collapse = ", ")
   )
 })
+
+
+
+# Third part: tidy the data -------------------------------------------
+movies_data <- do.call(rbind, movies_data) |>
+  data.frame()
+
+final_movies_data <- movies_data |>
+  dplyr::mutate(across(everything(), as.character)) |>
+  dplyr::mutate(rating = as.numeric(gsub(" out of 5", "", rating)))
